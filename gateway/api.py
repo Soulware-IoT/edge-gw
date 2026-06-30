@@ -1,22 +1,46 @@
-"""The gateway's HTTP surface: a single catch-all that proxies to the backend.
+"""The gateway's HTTP surface.
 
-The edge application calls this gateway at the *same path* it wants on the backend
-(e.g. ``GET /edge/me``); the gateway forwards it verbatim — method, path, query string,
-headers (including ``X-Edge-Api-Key``), and body — and relays the backend's response back.
-It knows nothing about specific endpoints; it is simply a pass-through.
+Outbound (edge app → backend): a catch-all that proxies to the backend at the same path.
+Inbound (backend → edge app): a specific ``POST /servo`` route that reads the target edge
+app IP from the payload and forwards the command directly to that instance.
 """
 import requests
 from flask import Blueprint, Response, jsonify, request
 
 from gateway.backend_client import BackendForwarder
 from gateway.config import load_config
+from gateway.edge_app_client import EdgeAppClient
 
 gateway_api = Blueprint("gateway_api", __name__)
 
-forwarder = BackendForwarder(load_config())
+_config = load_config()
+forwarder = BackendForwarder(_config)
+edge_app_client = EdgeAppClient(_config)
 
 # Headers that must not be forwarded — the outbound request recomputes them.
 EXCLUDED_REQUEST_HEADERS = {"host", "content-length"}
+
+
+@gateway_api.route("/servo", methods=["POST"])
+def servo():
+    """Route a servo command from the backend to the target edge app instance.
+
+    Expected body: ``{"edgeAppIp": "...", "iotDeviceId": "...", "command": "start|stop"}``
+    """
+    body = request.get_json(silent=True) or {}
+    edge_app_ip = body.get("edgeAppIp")
+    iot_device_id = body.get("iotDeviceId")
+    command = body.get("command")
+
+    if not edge_app_ip or not iot_device_id or not command:
+        return jsonify({"error": "Missing required fields: edgeAppIp, iotDeviceId, command"}), 400
+
+    try:
+        edge_app_client.send_servo_command(edge_app_ip, iot_device_id, command)
+    except requests.RequestException as error:
+        return jsonify({"error": f"Edge app unreachable at {edge_app_ip}: {error}"}), 502
+
+    return "", 200
 
 
 @gateway_api.route("/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])

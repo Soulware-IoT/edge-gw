@@ -5,6 +5,7 @@ where the backend is. The edge *device* (the edge application) holds the API key
 sends it; the gateway passes that header through unchanged.
 
     BACKEND_URL=http://localhost:8080 \
+    EDGE_APP_PORT=5000 \
     PORT=5001 \
     python app.py
 """
@@ -14,17 +15,19 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class GatewayConfig:
-    """Connection details the gateway uses to reach the backend.
+    """Connection details the gateway uses to reach the backend and the edge app.
 
     Attributes:
         backend_url: Base URL of the cloud backend (e.g. ``http://localhost:8080``).
+        edge_app_port: Port on which each edge app instance listens (e.g. 5000).
     """
 
     backend_url: str
+    edge_app_port: int
 
 
 def load_config() -> GatewayConfig:
-    """Build the :class:`GatewayConfig` from the required environment variable.
+    """Build the :class:`GatewayConfig` from environment variables.
 
     Raises:
         RuntimeError: if ``BACKEND_URL`` is missing or blank.
@@ -35,4 +38,5 @@ def load_config() -> GatewayConfig:
             "Missing required environment variable: BACKEND_URL. "
             "The edge gateway cannot start without the backend URL."
         )
-    return GatewayConfig(backend_url=backend_url.rstrip("/"))
+    edge_app_port = int(os.environ.get("EDGE_APP_PORT", "5000"))
+    return GatewayConfig(backend_url=backend_url.rstrip("/"), edge_app_port=edge_app_port)
