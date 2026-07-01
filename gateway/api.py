@@ -18,7 +18,7 @@ forwarder = BackendForwarder(_config)
 edge_app_client = EdgeAppClient(_config)
 
 # Headers that must not be forwarded — the outbound request recomputes them.
-EXCLUDED_REQUEST_HEADERS = {"host", "content-length"}
+EXCLUDED_REQUEST_HEADERS = {"host", "content-length", "accept-encoding"}
 
 
 @gateway_api.route("/servo", methods=["POST"])
