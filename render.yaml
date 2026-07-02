@@ -10,7 +10,13 @@ services:
     envVars:
       - key: BACKEND_URL
         sync: false          # required; set in the Render dashboard
-      - key: EDGE_APP_PORT
-        value: "5000"
+      - key: MQTT_HOST
+        sync: false          # required; set in the Render dashboard
+      - key: MQTT_PORT
+        value: "8883"
+      - key: MQTT_USERNAME
+        sync: false          # required; set in the Render dashboard
+      - key: MQTT_PASSWORD
+        sync: false          # required; set in the Render dashboard
       - key: PYTHON_VERSION
         value: "3.12.4"
