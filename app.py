@@ -24,6 +24,14 @@ from flask import Flask
 from gateway.api import gateway_api
 
 app = Flask(__name__)
+
+
+@app.get("/healthz")
+def healthz():
+    """Liveness probe for the platform — answered locally, never proxied to the backend."""
+    return {"status": "ok"}, 200
+
+
 app.register_blueprint(gateway_api)
 
 if __name__ == "__main__":

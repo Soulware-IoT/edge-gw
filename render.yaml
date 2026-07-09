@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: cocina360-edge-gateway
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Render injects $PORT; gunicorn binds to it. app:app -> `app` object in app.py
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /healthz
+    envVars:
+      - key: BACKEND_URL
+        sync: false          # required; set in the Render dashboard
+      - key: MQTT_HOST
+        sync: false          # required; set in the Render dashboard
+      - key: MQTT_PORT
+        value: "8883"
+      - key: MQTT_USERNAME
+        sync: false          # required; set in the Render dashboard
+      - key: MQTT_PASSWORD
+        sync: false          # required; set in the Render dashboard
+      - key: PYTHON_VERSION
+        value: "3.12.4"
